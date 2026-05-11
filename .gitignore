@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+env/
+venv/
+.env
+.venv
+*.egg-info/
+dist/
+build/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs & databases
+*.log
+*.sqlite
+*.db
+
+# Generated datasets
+/datasets/
+*.csv
+*.json
+*.xlsx
+
+# OS metadata
+.DS_Store
+Thumbs.db
