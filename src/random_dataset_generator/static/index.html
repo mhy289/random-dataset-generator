@@ -548,6 +548,9 @@
                 unique: "唯一",
                 yes: "是",
                 no: "否",
+                badge_true: "是",
+                badge_false: "否",
+                badge_null: "空",
                 null_ratio: "空值率",
                 pattern: "模式",
                 pattern_placeholder: "如：<L><d><d><d>",
@@ -606,6 +609,9 @@
                 unique: "Unique",
                 yes: "Yes",
                 no: "No",
+                badge_true: "True",
+                badge_false: "False",
+                badge_null: "NULL",
                 null_ratio: "Null Ratio",
                 pattern: "Pattern",
                 pattern_placeholder: "e.g. <L><d><d><d>",
@@ -647,6 +653,7 @@
         function toggleLang() {
             currentLang = currentLang === 'zh' ? 'en' : 'zh';
             document.getElementById('lang-btn').textContent = currentLang === 'zh' ? 'EN' : '中文';
+            document.documentElement.lang = currentLang === 'zh' ? 'zh-CN' : 'en';
             applyI18n();
             renderColumns();
         }
@@ -1001,11 +1008,11 @@
                 headers.forEach(h => {
                     let val = row[h];
                     if (val === null || val === '' || val === 'N/A' || val === 'null') {
-                        html += `<td><span class="badge badge-null">NULL</span></td>`;
+                        html += `<td><span class="badge badge-null">${t('badge_null')}</span></td>`;
                     } else if (val === true) {
-                        html += `<td><span class="badge badge-true">True</span></td>`;
+                        html += `<td><span class="badge badge-true">${t('badge_true')}</span></td>`;
                     } else if (val === false) {
-                        html += `<td><span class="badge badge-false">False</span></td>`;
+                        html += `<td><span class="badge badge-false">${t('badge_false')}</span></td>`;
                     } else {
                         html += `<td title="${String(val)}">${val}</td>`;
                     }
