@@ -2,10 +2,18 @@
 
 import io
 import json
+import sys
 from pathlib import Path
 from flask import Flask, request, jsonify, send_file, send_from_directory
 
-from .core import DataType, Distribution, ColumnConfig, DatasetConfig, Dataset
+# 支持直接运行 (python app.py) 和模块运行 (python -m src.random_dataset_generator.app)
+try:
+    from .core import DataType, Distribution, ColumnConfig, DatasetConfig, Dataset
+except ImportError:
+    _project_root = str(Path(__file__).resolve().parent.parent.parent)
+    if _project_root not in sys.path:
+        sys.path.insert(0, _project_root)
+    from src.random_dataset_generator import DataType, Distribution, ColumnConfig, DatasetConfig, Dataset
 
 app = Flask(__name__, static_folder=None)
 
