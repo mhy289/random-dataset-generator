@@ -90,20 +90,21 @@ def _parse_columns(columns_cfg):
 
         min_val = col.get("min_value")
         max_val = col.get("max_value")
-        # 数值类型转换
-        if min_val is not None and min_val != "":
-            min_val = float(min_val) if dtype == DataType.FLOAT else int(float(min_val))
-        else:
-            min_val = None
-        if max_val is not None and max_val != "":
-            max_val = float(max_val) if dtype == DataType.FLOAT else int(float(max_val))
-        else:
-            max_val = None
 
         # 日期/时间类型保留字符串
         if dtype in (DataType.DATE, DataType.DATETIME):
-            min_val = col.get("min_value") or None
-            max_val = col.get("max_value") or None
+            min_val = min_val if min_val and str(min_val).strip() else None
+            max_val = max_val if max_val and str(max_val).strip() else None
+        else:
+            # 数值类型转换
+            if min_val is not None and min_val != "":
+                min_val = float(min_val) if dtype == DataType.FLOAT else int(float(min_val))
+            else:
+                min_val = None
+            if max_val is not None and max_val != "":
+                max_val = float(max_val) if dtype == DataType.FLOAT else int(float(max_val))
+            else:
+                max_val = None
 
         if min_val is not None and max_val is not None and dtype not in (DataType.DATE, DataType.DATETIME):
             if min_val > max_val:
