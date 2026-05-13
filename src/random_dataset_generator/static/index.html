@@ -404,6 +404,30 @@
 
         .error-banner.show { display: flex; align-items: center; gap: 8px; }
 
+        .lang-toggle {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            height: 34px;
+            padding: 0 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--card);
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .lang-toggle:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
         @media (max-width: 768px) {
             .form-row { flex-direction: column; }
             .col-item { flex-direction: column; align-items: flex-start; }
@@ -412,37 +436,38 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" style="position:relative;">
+        <button class="lang-toggle" id="lang-btn" onclick="toggleLang()">EN</button>
         <header>
-            <h1>随机数据集生成器</h1>
-            <p>配置列规则，快速生成测试数据集，支持 CSV / JSON 导出</p>
+            <h1 data-i18n="title">随机数据集生成器</h1>
+            <p data-i18n="subtitle">配置列规则，快速生成测试数据集，支持 CSV / JSON 导出</p>
         </header>
 
         <!-- Dataset Config -->
         <div class="card">
-            <div class="card-title">数据集配置</div>
+            <div class="card-title" data-i18n="dataset_config">数据集配置</div>
             <div class="form-row">
                 <div class="form-group">
-                    <label>行数</label>
+                    <label data-i18n="rows">行数</label>
                     <input type="number" id="row-count" value="50" min="1" max="100000">
                 </div>
                 <div class="form-group">
-                    <label>随机种子（可选）</label>
-                    <input type="number" id="seed" placeholder="留空则随机">
+                    <label data-i18n="seed">随机种子（可选）</label>
+                    <input type="number" id="seed" data-i18n-placeholder="seed_placeholder" placeholder="留空则随机">
                 </div>
             </div>
         </div>
 
         <!-- Column Config -->
         <div class="card">
-            <div class="card-title">列配置</div>
+            <div class="card-title" data-i18n="column_config">列配置</div>
             <div class="form-row">
                 <div class="form-group col-name">
-                    <label>列名</label>
-                    <input type="text" id="new-col-name" placeholder="如：user_id">
+                    <label data-i18n="col_name">列名</label>
+                    <input type="text" id="new-col-name" data-i18n-placeholder="col_name_placeholder" placeholder="如：user_id">
                 </div>
                 <div class="form-group col-dtype">
-                    <label>数据类型</label>
+                    <label data-i18n="data_type">数据类型</label>
                     <select id="new-col-dtype">
                         <option value="integer">整数</option>
                         <option value="float">浮点数</option>
@@ -456,8 +481,8 @@
                         <option value="uuid">UUID</option>
                     </select>
                 </div>
-                <button class="btn btn-primary" onclick="addColumn()">+ 添加列</button>
-                <button class="btn btn-outline" onclick="addPreset()">使用预设模板</button>
+                <button class="btn btn-primary" onclick="addColumn()" data-i18n="add_column">+ 添加列</button>
+                <button class="btn btn-outline" onclick="addPreset()" data-i18n="use_preset">使用预设模板</button>
             </div>
             <div class="col-list" id="col-list"></div>
         </div>
@@ -468,7 +493,7 @@
                 <span id="error-banner-msg"></span>
             </div>
             <div class="actions">
-                <button class="btn btn-primary" id="btn-generate" onclick="generate()">生成数据</button>
+                <button class="btn btn-primary" id="btn-generate" onclick="generate()" data-i18n="generate">生成数据</button>
                 <button class="btn btn-success" id="btn-csv" onclick="exportData('csv')" disabled>导出 CSV</button>
                 <button class="btn btn-success" id="btn-json" onclick="exportData('json')" disabled>导出 JSON</button>
             </div>
@@ -476,14 +501,14 @@
 
         <!-- Result -->
         <div class="card" id="result-card" style="display:none;">
-            <div class="card-title">生成结果</div>
+            <div class="card-title" data-i18n="result">生成结果</div>
             <div class="stats" id="stats"></div>
             <div class="table-wrap" id="table-wrap"></div>
         </div>
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <div>正在生成数据...</div>
+            <div data-i18n="generating">正在生成数据...</div>
         </div>
     </div>
 
@@ -492,19 +517,186 @@
     <script>
         let columns = [];
         let lastConfig = null;
+        let currentLang = 'zh';
 
-        const TYPE_LABELS = {
+        // ==================== i18n ====================
+        const I18N = {
+            zh: {
+                title: "随机数据集生成器",
+                subtitle: "配置列规则，快速生成测试数据集，支持 CSV / JSON 导出",
+                dataset_config: "数据集配置",
+                rows: "行数",
+                seed: "随机种子（可选）",
+                seed_placeholder: "留空则随机",
+                column_config: "列配置",
+                col_name: "列名",
+                col_name_placeholder: "如：user_id",
+                data_type: "数据类型",
+                add_column: "+ 添加列",
+                use_preset: "使用预设模板",
+                generate: "生成数据",
+                export_csv: "导出 CSV",
+                export_json: "导出 JSON",
+                result: "生成结果",
+                generating: "正在生成数据...",
+                total_rows: "总行数",
+                total_cols: "总列数",
+                no_data: "无数据",
+                preview_hint: "仅展示前 {max} 行，共 {total} 行",
+                empty_cols: "暂未配置列，请添加列或使用预设模板",
+                delete: "删除",
+                unique: "唯一",
+                yes: "是",
+                no: "否",
+                null_ratio: "空值率",
+                pattern: "模式",
+                pattern_placeholder: "如：<L><d><d><d>",
+                choices_label: "选项（逗号分隔）",
+                choices_placeholder: "如：北京,上海,深圳",
+                // Type labels
+                type_integer: "整数", type_float: "浮点数", type_string: "字符串",
+                type_date: "日期", type_datetime: "日期时间", type_boolean: "布尔值",
+                type_categorical: "分类", type_email: "邮箱", type_phone: "手机号", type_uuid: "UUID",
+                // Range labels
+                range_min: "最小值", range_max: "最大值",
+                range_min_len: "最小长度", range_max_len: "最大长度",
+                range_start_date: "起始日期", range_end_date: "结束日期",
+                range_start_time: "起始时间", range_end_time: "结束时间",
+                // Validation
+                err_col_name_empty: "请输入列名",
+                err_col_name_dup: "列名\"{name}\"重复",
+                err_min_gt_max: "最小值不能大于最大值",
+                err_start_gt_end: "起始值不能大于结束值",
+                err_cat_no_choices: "分类类型必须填写选项",
+                err_null_ratio: "空值率必须在 0~1 之间",
+                err_no_columns: "请至少添加一列配置",
+                err_has_errors: "配置存在错误，请检查红色高亮的列",
+                err_generate_fail: "生成失败",
+                err_request_fail: "请求失败: {msg}",
+                err_export_fail: "导出失败",
+                err_export_fail_msg: "导出失败: {msg}",
+                err_generate_first: "请先生成数据",
+                toast_generate_ok: "数据生成成功！",
+                toast_export_ok: "导出成功！",
+            },
+            en: {
+                title: "Random Dataset Generator",
+                subtitle: "Configure column rules, generate test datasets quickly, export CSV / JSON",
+                dataset_config: "Dataset Config",
+                rows: "Rows",
+                seed: "Seed (optional)",
+                seed_placeholder: "Leave empty for random",
+                column_config: "Column Config",
+                col_name: "Column Name",
+                col_name_placeholder: "e.g. user_id",
+                data_type: "Data Type",
+                add_column: "+ Add Column",
+                use_preset: "Use Preset",
+                generate: "Generate",
+                export_csv: "Export CSV",
+                export_json: "Export JSON",
+                result: "Result",
+                generating: "Generating data...",
+                total_rows: "Total Rows",
+                total_cols: "Total Columns",
+                no_data: "No data",
+                preview_hint: "Showing first {max} of {total} rows",
+                empty_cols: "No columns configured. Add columns or use a preset.",
+                delete: "Delete",
+                unique: "Unique",
+                yes: "Yes",
+                no: "No",
+                null_ratio: "Null Ratio",
+                pattern: "Pattern",
+                pattern_placeholder: "e.g. <L><d><d><d>",
+                choices_label: "Choices (comma-separated)",
+                choices_placeholder: "e.g. A,B,C",
+                type_integer: "Integer", type_float: "Float", type_string: "String",
+                type_date: "Date", type_datetime: "Datetime", type_boolean: "Boolean",
+                type_categorical: "Categorical", type_email: "Email", type_phone: "Phone", type_uuid: "UUID",
+                range_min: "Min", range_max: "Max",
+                range_min_len: "Min Length", range_max_len: "Max Length",
+                range_start_date: "Start Date", range_end_date: "End Date",
+                range_start_time: "Start Time", range_end_time: "End Time",
+                err_col_name_empty: "Column name is required",
+                err_col_name_dup: "Column name \"{name}\" is duplicated",
+                err_min_gt_max: "Min value cannot be greater than max",
+                err_start_gt_end: "Start cannot be greater than end",
+                err_cat_no_choices: "Categorical type requires choices",
+                err_null_ratio: "Null ratio must be between 0 and 1",
+                err_no_columns: "Please add at least one column",
+                err_has_errors: "Config has errors. Check highlighted columns.",
+                err_generate_fail: "Generation failed",
+                err_request_fail: "Request failed: {msg}",
+                err_export_fail: "Export failed",
+                err_export_fail_msg: "Export failed: {msg}",
+                err_generate_first: "Please generate data first",
+                toast_generate_ok: "Data generated successfully!",
+                toast_export_ok: "Export successful!",
+            }
+        };
+
+        function t(key, params = {}) {
+            let text = (I18N[currentLang] || I18N.zh)[key] || I18N.zh[key] || key;
+            for (const [k, v] of Object.entries(params)) {
+                text = text.replace(`{${k}}`, v);
+            }
+            return text;
+        }
+
+        function toggleLang() {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            document.getElementById('lang-btn').textContent = currentLang === 'zh' ? 'EN' : '中文';
+            applyI18n();
+            renderColumns();
+        }
+
+        function applyI18n() {
+            // Static elements with data-i18n
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = t(key);
+            });
+            // Placeholders
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                el.placeholder = t(key);
+            });
+            // Buttons with specific text
+            document.getElementById('btn-csv').textContent = t('export_csv');
+            document.getElementById('btn-json').textContent = t('export_json');
+            // New-column dtype select
+            const dtypeSelect = document.getElementById('new-col-dtype');
+            dtypeSelect.querySelectorAll('option').forEach(opt => {
+                const key = 'type_' + opt.value;
+                opt.textContent = t(key);
+            });
+            // Title
+            document.title = t('title');
+        }
+
+        // ==================== Type config ====================
+        const TYPE_LABELS_ZH = {
             integer: "整数", float: "浮点数", string: "字符串",
             date: "日期", datetime: "日期时间", boolean: "布尔值",
             categorical: "分类", email: "邮箱", phone: "手机号", uuid: "UUID",
         };
+        const TYPE_LABELS_EN = {
+            integer: "Integer", float: "Float", string: "String",
+            date: "Date", datetime: "Datetime", boolean: "Boolean",
+            categorical: "Categorical", email: "Email", phone: "Phone", uuid: "UUID",
+        };
+
+        function getTypeLabel(dtype) {
+            return (currentLang === 'zh' ? TYPE_LABELS_ZH : TYPE_LABELS_EN)[dtype] || dtype;
+        }
 
         const TYPE_HINTS = {
-            integer:    { hasRange: true,  rangeLabel: ["最小值","最大值"], hasChoices: false, hasPattern: false },
-            float:      { hasRange: true,  rangeLabel: ["最小值","最大值"], hasChoices: false, hasPattern: false },
-            string:     { hasRange: true,  rangeLabel: ["最小长度","最大长度"], hasChoices: false, hasPattern: true },
-            date:       { hasRange: true,  rangeLabel: ["起始日期","结束日期"], hasChoices: false, hasPattern: false, dateInput: true },
-            datetime:   { hasRange: true,  rangeLabel: ["起始时间","结束时间"], hasChoices: false, hasPattern: false, dateInput: true },
+            integer:    { hasRange: true,  rangeLabelKey: ["range_min","range_max"], hasChoices: false, hasPattern: false },
+            float:      { hasRange: true,  rangeLabelKey: ["range_min","range_max"], hasChoices: false, hasPattern: false },
+            string:     { hasRange: true,  rangeLabelKey: ["range_min_len","range_max_len"], hasChoices: false, hasPattern: true },
+            date:       { hasRange: true,  rangeLabelKey: ["range_start_date","range_end_date"], hasChoices: false, hasPattern: false, dateInput: true },
+            datetime:   { hasRange: true,  rangeLabelKey: ["range_start_time","range_end_time"], hasChoices: false, hasPattern: false, dateInput: true },
             boolean:    { hasRange: false, hasChoices: false, hasPattern: false },
             categorical:{ hasRange: false, hasChoices: true,  hasPattern: false },
             email:      { hasRange: false, hasChoices: false, hasPattern: false },
@@ -512,10 +704,11 @@
             uuid:       { hasRange: false, hasChoices: false, hasPattern: false },
         };
 
+        // ==================== Column logic ====================
         function addColumn(name, dtype, opts = {}) {
             const colName = name || document.getElementById('new-col-name').value.trim();
             const colDtype = dtype || document.getElementById('new-col-dtype').value;
-            if (!colName) { showToast('请输入列名', 'error'); return; }
+            if (!colName) { showToast(t('err_col_name_empty'), 'error'); return; }
 
             columns.push({
                 name: colName,
@@ -588,14 +781,14 @@
                 columns[i]._error = null;
 
                 if (!col.name || !col.name.trim()) {
-                    columns[i]._error = '列名不能为空';
+                    columns[i]._error = t('err_col_name_empty');
                     showFieldError(i, columns[i]._error);
                     valid = false;
                     continue;
                 }
 
                 if (names.has(col.name)) {
-                    columns[i]._error = `列名"${col.name}"重复`;
+                    columns[i]._error = t('err_col_name_dup', { name: col.name });
                     showFieldError(i, columns[i]._error);
                     valid = false;
                 }
@@ -605,7 +798,7 @@
                 if (hint.hasRange && col.min_value !== null && col.max_value !== null) {
                     if (col.dtype === 'date' || col.dtype === 'datetime') {
                         if (col.min_value && col.max_value && col.min_value > col.max_value) {
-                            columns[i]._error = '起始值不能大于结束值';
+                            columns[i]._error = t('err_start_gt_end');
                             showFieldError(i, columns[i]._error);
                             valid = false;
                         }
@@ -613,7 +806,7 @@
                         const mn = parseFloat(col.min_value);
                         const mx = parseFloat(col.max_value);
                         if (!isNaN(mn) && !isNaN(mx) && mn > mx) {
-                            columns[i]._error = '最小值不能大于最大值';
+                            columns[i]._error = t('err_min_gt_max');
                             showFieldError(i, columns[i]._error);
                             valid = false;
                         }
@@ -621,13 +814,13 @@
                 }
 
                 if (col.dtype === 'categorical' && !col.choices) {
-                    columns[i]._error = '分类类型必须填写选项';
+                    columns[i]._error = t('err_cat_no_choices');
                     showFieldError(i, columns[i]._error);
                     valid = false;
                 }
 
                 if (col.null_ratio < 0 || col.null_ratio > 1) {
-                    columns[i]._error = '空值率必须在 0~1 之间';
+                    columns[i]._error = t('err_null_ratio');
                     showFieldError(i, columns[i]._error);
                     valid = false;
                 }
@@ -639,13 +832,13 @@
         function renderColumns() {
             const list = document.getElementById('col-list');
             if (columns.length === 0) {
-                list.innerHTML = '<div class="empty-state" style="padding:24px;">暂未配置列，请添加列或使用预设模板</div>';
+                list.innerHTML = `<div class="empty-state" style="padding:24px;">${t('empty_cols')}</div>`;
                 return;
             }
 
             list.innerHTML = columns.map((col, i) => {
                 const hint = TYPE_HINTS[col.dtype] || {};
-                const label = TYPE_LABELS[col.dtype] || col.dtype;
+                const label = getTypeLabel(col.dtype);
                 const hasError = col._error ? ' has-error' : '';
                 let extra = '';
 
@@ -654,11 +847,11 @@
                     const inputType = isDate ? 'date' : 'number';
                     extra += `
                         <div class="form-group">
-                            <label>${hint.rangeLabel[0]}</label>
+                            <label>${t(hint.rangeLabelKey[0])}</label>
                             <input type="${inputType}" value="${col.min_value ?? ''}" onchange="columns[${i}].min_value=this.value||null">
                         </div>
                         <div class="form-group">
-                            <label>${hint.rangeLabel[1]}</label>
+                            <label>${t(hint.rangeLabelKey[1])}</label>
                             <input type="${inputType}" value="${col.max_value ?? ''}" onchange="columns[${i}].max_value=this.value||null">
                         </div>`;
                 }
@@ -666,29 +859,29 @@
                 if (hint.hasChoices) {
                     extra += `
                         <div class="form-group col-choices">
-                            <label>选项（逗号分隔）</label>
-                            <input type="text" value="${col.choices ?? ''}" placeholder="如：北京,上海,深圳" onchange="columns[${i}].choices=this.value||null">
+                            <label>${t('choices_label')}</label>
+                            <input type="text" value="${col.choices ?? ''}" placeholder="${t('choices_placeholder')}" onchange="columns[${i}].choices=this.value||null">
                         </div>`;
                 }
 
                 if (hint.hasPattern) {
                     extra += `
                         <div class="form-group">
-                            <label>模式</label>
-                            <input type="text" value="${col.pattern ?? ''}" placeholder="如：<L><d><d><d>" onchange="columns[${i}].pattern=this.value||null">
+                            <label>${t('pattern')}</label>
+                            <input type="text" value="${col.pattern ?? ''}" placeholder="${t('pattern_placeholder')}" onchange="columns[${i}].pattern=this.value||null">
                         </div>`;
                 }
 
                 extra += `
                     <div class="form-group">
-                        <label>空值率</label>
+                        <label>${t('null_ratio')}</label>
                         <input type="number" min="0" max="1" step="0.05" value="${col.null_ratio}" style="min-width:80px" onchange="columns[${i}].null_ratio=parseFloat(this.value)||0">
                     </div>
                     <div class="form-group">
-                        <label>唯一</label>
+                        <label>${t('unique')}</label>
                         <select style="min-width:70px" onchange="columns[${i}].unique=this.value==='true'">
-                            <option value="false" ${!col.unique?'selected':''}>否</option>
-                            <option value="true" ${col.unique?'selected':''}>是</option>
+                            <option value="false" ${!col.unique?'selected':''}>${t('no')}</option>
+                            <option value="true" ${col.unique?'selected':''}>${t('yes')}</option>
                         </select>
                     </div>`;
 
@@ -696,18 +889,18 @@
                     <div class="col-item${hasError}">
                         <span class="col-number">${i + 1}</span>
                         <div class="form-group col-name">
-                            <label>列名</label>
+                            <label>${t('col_name')}</label>
                             <input type="text" value="${col.name}" onchange="columns[${i}].name=this.value">
                         </div>
                         <div class="form-group col-dtype">
-                            <label>类型</label>
+                            <label>${t('data_type')}</label>
                             <select onchange="columns[${i}].dtype=this.value;renderColumns()">
-                                ${Object.keys(TYPE_LABELS)
-                                    .map(t => `<option value="${t}" ${col.dtype===t?'selected':''}>${TYPE_LABELS[t]}</option>`).join('')}
+                                ${Object.keys(TYPE_LABELS_ZH)
+                                    .map(tp => `<option value="${tp}" ${col.dtype===tp?'selected':''}>${getTypeLabel(tp)}</option>`).join('')}
                             </select>
                         </div>
                         ${extra}
-                        <button class="btn btn-danger" onclick="removeColumn(${i})">删除</button>
+                        <button class="btn btn-danger" onclick="removeColumn(${i})">${t('delete')}</button>
                     </div>`;
             }).join('');
         }
@@ -738,12 +931,12 @@
             clearErrors();
 
             if (columns.length === 0) {
-                showErrorBanner('请至少添加一列配置');
+                showErrorBanner(t('err_no_columns'));
                 return;
             }
 
             if (!validateColumns()) {
-                showErrorBanner('配置存在错误，请检查红色高亮的列');
+                showErrorBanner(t('err_has_errors'));
                 return;
             }
 
@@ -763,18 +956,18 @@
 
                 const result = await res.json();
                 if (!result.success) {
-                    showErrorBanner(result.error || '生成失败');
-                    showToast(result.error || '生成失败', 'error');
+                    showErrorBanner(result.error || t('err_generate_fail'));
+                    showToast(result.error || t('err_generate_fail'), 'error');
                     return;
                 }
 
                 renderResult(result);
                 document.getElementById('btn-csv').disabled = false;
                 document.getElementById('btn-json').disabled = false;
-                showToast('数据生成成功！', 'success');
+                showToast(t('toast_generate_ok'), 'success');
             } catch (err) {
-                showErrorBanner('请求失败: ' + err.message);
-                showToast('请求失败: ' + err.message, 'error');
+                showErrorBanner(t('err_request_fail', { msg: err.message }));
+                showToast(t('err_request_fail', { msg: err.message }), 'error');
             } finally {
                 btn.disabled = false;
                 document.getElementById('loading').classList.remove('active');
@@ -786,12 +979,12 @@
             card.style.display = '';
 
             document.getElementById('stats').innerHTML = `
-                <div class="stat-item"><div class="stat-val">${result.rows}</div><div class="stat-label">总行数</div></div>
-                <div class="stat-item"><div class="stat-val">${result.columns.length}</div><div class="stat-label">总列数</div></div>
+                <div class="stat-item"><div class="stat-val">${result.rows}</div><div class="stat-label">${t('total_rows')}</div></div>
+                <div class="stat-item"><div class="stat-val">${result.columns.length}</div><div class="stat-label">${t('total_cols')}</div></div>
             `;
 
             if (!result.data || result.data.length === 0) {
-                document.getElementById('table-wrap').innerHTML = '<div class="empty-state">无数据</div>';
+                document.getElementById('table-wrap').innerHTML = `<div class="empty-state">${t('no_data')}</div>`;
                 return;
             }
 
@@ -822,14 +1015,14 @@
 
             html += '</tbody></table>';
             if (result.data.length > maxPreview) {
-                html += `<div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:13px;">仅展示前 ${maxPreview} 行，共 ${result.data.length} 行</div>`;
+                html += `<div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:13px;">${t('preview_hint', { max: maxPreview, total: result.data.length })}</div>`;
             }
 
             document.getElementById('table-wrap').innerHTML = html;
         }
 
         async function exportData(fmt) {
-            if (!lastConfig) { showToast('请先生成数据', 'error'); return; }
+            if (!lastConfig) { showToast(t('err_generate_first'), 'error'); return; }
 
             try {
                 const res = await fetch(`/api/export/${fmt}`, {
@@ -840,7 +1033,7 @@
 
                 if (!res.ok) {
                     const err = await res.json();
-                    showToast(err.error || '导出失败', 'error');
+                    showToast(err.error || t('err_export_fail'), 'error');
                     return;
                 }
 
@@ -851,9 +1044,9 @@
                 a.download = `dataset.${fmt}`;
                 a.click();
                 URL.revokeObjectURL(url);
-                showToast('导出成功！', 'success');
+                showToast(t('toast_export_ok'), 'success');
             } catch (err) {
-                showToast('导出失败: ' + err.message, 'error');
+                showToast(t('err_export_fail_msg', { msg: err.message }), 'error');
             }
         }
 
@@ -865,6 +1058,7 @@
         }
 
         // Init
+        applyI18n();
         renderColumns();
     </script>
 </body>
