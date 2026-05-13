@@ -374,6 +374,36 @@
             border: 1px solid #bbf7d0;
         }
 
+        .col-item.has-error {
+            border-color: var(--danger) !important;
+            background: #fef2f2 !important;
+        }
+
+        .field-error {
+            color: var(--danger);
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+        .form-group input.input-error,
+        .form-group select.input-error {
+            border-color: var(--danger) !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+        }
+
+        .error-banner {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: var(--danger);
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error-banner.show { display: flex; align-items: center; gap: 8px; }
+
         @media (max-width: 768px) {
             .form-row { flex-direction: column; }
             .col-item { flex-direction: column; align-items: flex-start; }
@@ -414,15 +444,15 @@
                 <div class="form-group col-dtype">
                     <label>数据类型</label>
                     <select id="new-col-dtype">
-                        <option value="integer">Integer</option>
-                        <option value="float">Float</option>
-                        <option value="string">String</option>
-                        <option value="date">Date</option>
-                        <option value="datetime">Datetime</option>
-                        <option value="boolean">Boolean</option>
-                        <option value="categorical">Categorical</option>
-                        <option value="email">Email</option>
-                        <option value="phone">Phone</option>
+                        <option value="integer">整数</option>
+                        <option value="float">浮点数</option>
+                        <option value="string">字符串</option>
+                        <option value="date">日期</option>
+                        <option value="datetime">日期时间</option>
+                        <option value="boolean">布尔值</option>
+                        <option value="categorical">分类</option>
+                        <option value="email">邮箱</option>
+                        <option value="phone">手机号</option>
                         <option value="uuid">UUID</option>
                     </select>
                 </div>
@@ -434,6 +464,9 @@
 
         <!-- Actions -->
         <div class="card">
+            <div class="error-banner" id="error-banner">
+                <span id="error-banner-msg"></span>
+            </div>
             <div class="actions">
                 <button class="btn btn-primary" id="btn-generate" onclick="generate()">生成数据</button>
                 <button class="btn btn-success" id="btn-csv" onclick="exportData('csv')" disabled>导出 CSV</button>
@@ -459,6 +492,12 @@
     <script>
         let columns = [];
         let lastConfig = null;
+
+        const TYPE_LABELS = {
+            integer: "整数", float: "浮点数", string: "字符串",
+            date: "日期", datetime: "日期时间", boolean: "布尔值",
+            categorical: "分类", email: "邮箱", phone: "手机号", uuid: "UUID",
+        };
 
         const TYPE_HINTS = {
             integer:    { hasRange: true,  rangeLabel: ["最小值","最大值"], hasChoices: false, hasPattern: false },
@@ -490,6 +529,7 @@
                 distribution: opts.distribution ?? 'uniform',
                 mean: opts.mean ?? null,
                 std_dev: opts.std_dev ?? null,
+                _error: null,
             });
 
             document.getElementById('new-col-name').value = '';
@@ -513,6 +553,89 @@
             renderColumns();
         }
 
+        function clearErrors() {
+            document.querySelectorAll('.col-item').forEach(el => el.classList.remove('has-error'));
+            document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+            document.querySelectorAll('.field-error').forEach(el => el.remove());
+            const banner = document.getElementById('error-banner');
+            banner.classList.remove('show');
+        }
+
+        function showFieldError(colIdx, msg) {
+            const items = document.querySelectorAll('.col-item');
+            if (items[colIdx]) {
+                items[colIdx].classList.add('has-error');
+                const errSpan = document.createElement('div');
+                errSpan.className = 'field-error';
+                errSpan.textContent = msg;
+                items[colIdx].appendChild(errSpan);
+            }
+        }
+
+        function showErrorBanner(msg) {
+            const banner = document.getElementById('error-banner');
+            document.getElementById('error-banner-msg').textContent = msg;
+            banner.classList.add('show');
+        }
+
+        function validateColumns() {
+            clearErrors();
+            let valid = true;
+            const names = new Set();
+
+            for (let i = 0; i < columns.length; i++) {
+                const col = columns[i];
+                columns[i]._error = null;
+
+                if (!col.name || !col.name.trim()) {
+                    columns[i]._error = '列名不能为空';
+                    showFieldError(i, columns[i]._error);
+                    valid = false;
+                    continue;
+                }
+
+                if (names.has(col.name)) {
+                    columns[i]._error = `列名"${col.name}"重复`;
+                    showFieldError(i, columns[i]._error);
+                    valid = false;
+                }
+                names.add(col.name);
+
+                const hint = TYPE_HINTS[col.dtype] || {};
+                if (hint.hasRange && col.min_value !== null && col.max_value !== null) {
+                    if (col.dtype === 'date' || col.dtype === 'datetime') {
+                        if (col.min_value && col.max_value && col.min_value > col.max_value) {
+                            columns[i]._error = '起始值不能大于结束值';
+                            showFieldError(i, columns[i]._error);
+                            valid = false;
+                        }
+                    } else {
+                        const mn = parseFloat(col.min_value);
+                        const mx = parseFloat(col.max_value);
+                        if (!isNaN(mn) && !isNaN(mx) && mn > mx) {
+                            columns[i]._error = '最小值不能大于最大值';
+                            showFieldError(i, columns[i]._error);
+                            valid = false;
+                        }
+                    }
+                }
+
+                if (col.dtype === 'categorical' && !col.choices) {
+                    columns[i]._error = '分类类型必须填写选项';
+                    showFieldError(i, columns[i]._error);
+                    valid = false;
+                }
+
+                if (col.null_ratio < 0 || col.null_ratio > 1) {
+                    columns[i]._error = '空值率必须在 0~1 之间';
+                    showFieldError(i, columns[i]._error);
+                    valid = false;
+                }
+            }
+
+            return valid;
+        }
+
         function renderColumns() {
             const list = document.getElementById('col-list');
             if (columns.length === 0) {
@@ -522,6 +645,8 @@
 
             list.innerHTML = columns.map((col, i) => {
                 const hint = TYPE_HINTS[col.dtype] || {};
+                const label = TYPE_LABELS[col.dtype] || col.dtype;
+                const hasError = col._error ? ' has-error' : '';
                 let extra = '';
 
                 if (hint.hasRange) {
@@ -542,7 +667,7 @@
                     extra += `
                         <div class="form-group col-choices">
                             <label>选项（逗号分隔）</label>
-                            <input type="text" value="${col.choices ?? ''}" placeholder="A,B,C" onchange="columns[${i}].choices=this.value||null">
+                            <input type="text" value="${col.choices ?? ''}" placeholder="如：北京,上海,深圳" onchange="columns[${i}].choices=this.value||null">
                         </div>`;
                 }
 
@@ -568,7 +693,7 @@
                     </div>`;
 
                 return `
-                    <div class="col-item">
+                    <div class="col-item${hasError}">
                         <span class="col-number">${i + 1}</span>
                         <div class="form-group col-name">
                             <label>列名</label>
@@ -577,8 +702,8 @@
                         <div class="form-group col-dtype">
                             <label>类型</label>
                             <select onchange="columns[${i}].dtype=this.value;renderColumns()">
-                                ${['integer','float','string','date','datetime','boolean','categorical','email','phone','uuid']
-                                    .map(t => `<option value="${t}" ${col.dtype===t?'selected':''}>${t}</option>`).join('')}
+                                ${Object.keys(TYPE_LABELS)
+                                    .map(t => `<option value="${t}" ${col.dtype===t?'selected':''}>${TYPE_LABELS[t]}</option>`).join('')}
                             </select>
                         </div>
                         ${extra}
@@ -610,8 +735,15 @@
         }
 
         async function generate() {
+            clearErrors();
+
             if (columns.length === 0) {
-                showToast('请至少添加一列配置', 'error');
+                showErrorBanner('请至少添加一列配置');
+                return;
+            }
+
+            if (!validateColumns()) {
+                showErrorBanner('配置存在错误，请检查红色高亮的列');
                 return;
             }
 
@@ -631,7 +763,8 @@
 
                 const result = await res.json();
                 if (!result.success) {
-                    showToast(result.error, 'error');
+                    showErrorBanner(result.error || '生成失败');
+                    showToast(result.error || '生成失败', 'error');
                     return;
                 }
 
@@ -640,6 +773,7 @@
                 document.getElementById('btn-json').disabled = false;
                 showToast('数据生成成功！', 'success');
             } catch (err) {
+                showErrorBanner('请求失败: ' + err.message);
                 showToast('请求失败: ' + err.message, 'error');
             } finally {
                 btn.disabled = false;
