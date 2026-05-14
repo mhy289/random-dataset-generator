@@ -482,7 +482,14 @@
                     </select>
                 </div>
                 <button class="btn btn-primary" onclick="addColumn()" data-i18n="add_column">+ 添加列</button>
-                <button class="btn btn-outline" onclick="addPreset()" data-i18n="use_preset">使用预设模板</button>
+                <select id="preset-select" onchange="applyPreset(this.value); this.value='';" style="height:38px;padding:0 10px;border:1px solid var(--primary);border-radius:8px;color:var(--primary);background:#fff;font-size:13px;cursor:pointer;">
+                    <option value="" data-i18n-option="select_preset">选择预设模板</option>
+                    <option value="user">用户信息</option>
+                    <option value="product">商品数据</option>
+                    <option value="order">订单记录</option>
+                    <option value="student">学生成绩</option>
+                    <option value="employee">员工档案</option>
+                </select>
             </div>
             <div class="col-list" id="col-list"></div>
         </div>
@@ -533,7 +540,12 @@
                 col_name_placeholder: "如：user_id",
                 data_type: "数据类型",
                 add_column: "+ 添加列",
-                use_preset: "使用预设模板",
+                select_preset: "选择预设模板",
+                preset_user: "用户信息",
+                preset_product: "商品数据",
+                preset_order: "订单记录",
+                preset_student: "学生成绩",
+                preset_employee: "员工档案",
                 generate: "生成数据",
                 export_csv: "导出 CSV",
                 export_json: "导出 JSON",
@@ -594,7 +606,12 @@
                 col_name_placeholder: "e.g. user_id",
                 data_type: "Data Type",
                 add_column: "+ Add Column",
-                use_preset: "Use Preset",
+                select_preset: "Select Preset",
+                preset_user: "User Info",
+                preset_product: "Product Data",
+                preset_order: "Order Records",
+                preset_student: "Student Grades",
+                preset_employee: "Employee Profile",
                 generate: "Generate",
                 export_csv: "Export CSV",
                 export_json: "Export JSON",
@@ -680,6 +697,17 @@
             });
             // Title
             document.title = t('title');
+            // Preset select options
+            const presetSelect = document.getElementById('preset-select');
+            if (presetSelect) {
+                presetSelect.querySelectorAll('option').forEach(opt => {
+                    if (opt.value === '') {
+                        opt.textContent = t('select_preset');
+                    } else {
+                        opt.textContent = t('preset_' + opt.value);
+                    }
+                });
+            }
         }
 
         // ==================== Type config ====================
@@ -736,16 +764,64 @@
             renderColumns();
         }
 
-        function addPreset() {
+        const PRESETS = {
+            user: [
+                { name: 'id', dtype: 'integer', min_value: 1, max_value: 10000, unique: true },
+                { name: 'name', dtype: 'string', min_value: 5, max_value: 12 },
+                { name: 'email', dtype: 'email' },
+                { name: 'phone', dtype: 'phone' },
+                { name: 'score', dtype: 'float', min_value: 0, max_value: 100 },
+                { name: 'birthday', dtype: 'date', min_value: '1990-01-01', max_value: '2010-12-31' },
+                { name: 'active', dtype: 'boolean' },
+                { name: 'city', dtype: 'categorical', choices: '北京,上海,深圳,杭州,成都,广州' },
+            ],
+            product: [
+                { name: 'product_id', dtype: 'integer', min_value: 1001, max_value: 9999, unique: true },
+                { name: 'product_name', dtype: 'string', min_value: 8, max_value: 20 },
+                { name: 'category', dtype: 'categorical', choices: '电子产品,家居用品,服装,食品,图书' },
+                { name: 'price', dtype: 'float', min_value: 10, max_value: 9999 },
+                { name: 'stock', dtype: 'integer', min_value: 0, max_value: 5000 },
+                { name: 'weight_kg', dtype: 'float', min_value: 0.1, max_value: 50 },
+                { name: 'on_sale', dtype: 'boolean' },
+                { name: 'created_at', dtype: 'date', min_value: '2020-01-01', max_value: '2025-12-31' },
+            ],
+            order: [
+                { name: 'order_id', dtype: 'uuid' },
+                { name: 'user_id', dtype: 'integer', min_value: 1, max_value: 5000 },
+                { name: 'product_id', dtype: 'integer', min_value: 1001, max_value: 9999 },
+                { name: 'quantity', dtype: 'integer', min_value: 1, max_value: 100 },
+                { name: 'total_price', dtype: 'float', min_value: 10, max_value: 50000 },
+                { name: 'status', dtype: 'categorical', choices: '待付款,已付款,已发货,已完成,已取消' },
+                { name: 'order_time', dtype: 'datetime', min_value: '2024-01-01', max_value: '2025-12-31' },
+                { name: 'is_vip', dtype: 'boolean' },
+            ],
+            student: [
+                { name: 'student_id', dtype: 'integer', min_value: 2021001, max_value: 2024999, unique: true },
+                { name: 'name', dtype: 'string', min_value: 2, max_value: 4 },
+                { name: 'gender', dtype: 'categorical', choices: '男,女' },
+                { name: 'age', dtype: 'integer', min_value: 18, max_value: 25 },
+                { name: 'chinese', dtype: 'float', min_value: 0, max_value: 150 },
+                { name: 'math', dtype: 'float', min_value: 0, max_value: 150 },
+                { name: 'english', dtype: 'float', min_value: 0, max_value: 150 },
+                { name: 'passed', dtype: 'boolean' },
+                { name: 'class_name', dtype: 'categorical', choices: '一班,二班,三班,四班,五班' },
+            ],
+            employee: [
+                { name: 'emp_id', dtype: 'integer', min_value: 1001, max_value: 9999, unique: true },
+                { name: 'name', dtype: 'string', min_value: 2, max_value: 6 },
+                { name: 'department', dtype: 'categorical', choices: '技术部,市场部,财务部,人事部,运营部,产品部' },
+                { name: 'position', dtype: 'categorical', choices: '初级工程师,高级工程师,经理,总监,实习生' },
+                { name: 'salary', dtype: 'float', min_value: 5000, max_value: 80000 },
+                { name: 'hire_date', dtype: 'date', min_value: '2015-01-01', max_value: '2025-12-31' },
+                { name: 'is_manager', dtype: 'boolean' },
+                { name: 'performance', dtype: 'float', min_value: 1, max_value: 5 },
+            ],
+        };
+
+        function applyPreset(key) {
+            if (!key || !PRESETS[key]) return;
             columns = [];
-            addColumn('id', 'integer', { min_value: 1, max_value: 10000, unique: true });
-            addColumn('name', 'string', { min_value: 5, max_value: 12 });
-            addColumn('email', 'email');
-            addColumn('phone', 'phone');
-            addColumn('score', 'float', { min_value: 0, max_value: 100 });
-            addColumn('birthday', 'date', { min_value: '1990-01-01', max_value: '2010-12-31' });
-            addColumn('active', 'boolean');
-            addColumn('city', 'categorical', { choices: '北京,上海,深圳,杭州,成都,广州' });
+            PRESETS[key].forEach(col => addColumn(col.name, col.dtype, col));
         }
 
         function removeColumn(idx) {
