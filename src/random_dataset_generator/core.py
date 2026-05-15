@@ -26,6 +26,12 @@ class DataType(Enum):
     EMAIL = "email"
     PHONE = "phone"
     UUID = "uuid"
+    NAME = "name"
+    ADDRESS = "address"
+    URL = "url"
+    IP = "ip"
+    COLOR = "color"
+    COUNTRY = "country"
 
 
 class Distribution(Enum):
@@ -201,6 +207,77 @@ class DataGenerator:
     def generate_uuid(config: ColumnConfig) -> str:
         return f"{random.randint(0, 0xFFFFFFFF):08x}-{random.randint(0, 0xFFFF):04x}-{random.randint(0, 0xFFFF):04x}-{random.randint(0, 0xFFFF):04x}-{random.randint(0, 0xFFFFFFFFFFFF):012x}"
 
+    # ---- 新增数据类型 ----
+
+    _LAST_NAMES_ZH = ["王", "李", "张", "刘", "陈", "杨", "赵", "黄", "周", "吴",
+                       "徐", "孙", "胡", "朱", "高", "林", "何", "郭", "马", "罗"]
+    _FIRST_NAMES_ZH = ["伟", "芳", "娜", "敏", "静", "强", "磊", "洋", "勇", "军",
+                       "杰", "丽", "超", "秀英", "明", "华", "建华", "玉兰", "建国", "英"]
+    _LAST_NAMES_EN = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia",
+                      "Miller", "Davis", "Rodriguez", "Martinez", "Wilson", "Anderson",
+                      "Taylor", "Thomas", "Moore", "Jackson", "Martin", "Lee", "Thompson", "White"]
+    _FIRST_NAMES_EN = ["James", "Mary", "Robert", "Patricia", "John", "Jennifer",
+                       "Michael", "Linda", "David", "Elizabeth", "William", "Barbara",
+                       "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah", "Charles", "Karen"]
+
+    @staticmethod
+    def generate_name(config: ColumnConfig) -> str:
+        if config.pattern == "en":
+            return f"{random.choice(DataGenerator._FIRST_NAMES_EN)} {random.choice(DataGenerator._LAST_NAMES_EN)}"
+        last = random.choice(DataGenerator._LAST_NAMES_ZH)
+        first_len = random.randint(1, 2)
+        first = "".join(random.choice(DataGenerator._FIRST_NAMES_ZH) for _ in range(first_len))
+        return last + first
+
+    _STREETS = ["中山路", "解放路", "人民路", "建设路", "和平路", "长安路", "文化路", "学院路",
+                "新华路", "朝阳路", "友谊路", "光明路", "幸福路", "民主路", "胜利路"]
+    _CITIES_ZH = ["北京市", "上海市", "广州市", "深圳市", "杭州市", "成都市", "武汉市",
+                  "南京市", "重庆市", "西安市", "苏州市", "长沙市", "天津市", "郑州市"]
+
+    @staticmethod
+    def generate_address(config: ColumnConfig) -> str:
+        city = random.choice(DataGenerator._CITIES_ZH)
+        street = random.choice(DataGenerator._STREETS)
+        number = random.randint(1, 200)
+        building = random.randint(1, 30)
+        unit = random.randint(1, 6)
+        room = random.randint(101, 1205)
+        return f"{city}{street}{number}号{building}栋{unit}单元{room}室"
+
+    _DOMAINS = ["example.com", "test.org", "demo.net", "sample.io", "mysite.com",
+                "webapp.dev", "platform.co", "service.cn", "cloud.tech", "data.info"]
+    _PATHS = ["home", "api", "users", "products", "docs", "search", "dashboard", "settings", "profile", "items"]
+
+    @staticmethod
+    def generate_url(config: ColumnConfig) -> str:
+        protocol = random.choice(["https", "http"])
+        domain = random.choice(DataGenerator._DOMAINS)
+        path = random.choice(DataGenerator._PATHS)
+        param = random.randint(1, 9999)
+        return f"{protocol}://{domain}/{path}/{param}"
+
+    @staticmethod
+    def generate_ip(config: ColumnConfig) -> str:
+        if config.pattern == "v6":
+            groups = [f"{random.randint(0, 0xFFFF):04x}" for _ in range(8)]
+            return ":".join(groups)
+        return f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(1, 254)}"
+
+    @staticmethod
+    def generate_color(config: ColumnConfig) -> str:
+        r = random.randint(0, 255)
+        g = random.randint(0, 255)
+        b = random.randint(0, 255)
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    _COUNTRIES_ZH = ["中国", "美国", "日本", "韩国", "英国", "法国", "德国", "意大利", "西班牙",
+                     "加拿大", "澳大利亚", "巴西", "印度", "俄罗斯", "墨西哥", "泰国", "越南",
+                     "新加坡", "马来西亚", "印度尼西亚"]
+
+    @staticmethod
+    def generate_country(config: ColumnConfig) -> str:
+        return random.choice(DataGenerator._COUNTRIES_ZH)
+
 
 class Dataset:
     """数据集类"""
@@ -248,6 +325,12 @@ class Dataset:
                 DataType.EMAIL: DataGenerator.generate_email,
                 DataType.PHONE: DataGenerator.generate_phone,
                 DataType.UUID: DataGenerator.generate_uuid,
+                DataType.NAME: DataGenerator.generate_name,
+                DataType.ADDRESS: DataGenerator.generate_address,
+                DataType.URL: DataGenerator.generate_url,
+                DataType.IP: DataGenerator.generate_ip,
+                DataType.COLOR: DataGenerator.generate_color,
+                DataType.COUNTRY: DataGenerator.generate_country,
             }
             generator = generators.get(config.dtype)
             if not generator:

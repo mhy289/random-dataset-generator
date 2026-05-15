@@ -479,6 +479,12 @@
                         <option value="email">邮箱</option>
                         <option value="phone">手机号</option>
                         <option value="uuid">UUID</option>
+                        <option value="name">姓名</option>
+                        <option value="address">地址</option>
+                        <option value="url">URL</option>
+                        <option value="ip">IP地址</option>
+                        <option value="color">颜色</option>
+                        <option value="country">国家</option>
                     </select>
                 </div>
                 <button class="btn btn-primary" onclick="addColumn()" data-i18n="add_column">+ 添加列</button>
@@ -572,6 +578,8 @@
                 type_integer: "整数", type_float: "浮点数", type_string: "字符串",
                 type_date: "日期", type_datetime: "日期时间", type_boolean: "布尔值",
                 type_categorical: "分类", type_email: "邮箱", type_phone: "手机号", type_uuid: "UUID",
+                type_name: "姓名", type_address: "地址", type_url: "URL", type_ip: "IP地址",
+                type_color: "颜色", type_country: "国家",
                 // Range labels
                 range_min: "最小值", range_max: "最大值",
                 range_min_len: "最小长度", range_max_len: "最大长度",
@@ -637,6 +645,8 @@
                 type_integer: "Integer", type_float: "Float", type_string: "String",
                 type_date: "Date", type_datetime: "Datetime", type_boolean: "Boolean",
                 type_categorical: "Categorical", type_email: "Email", type_phone: "Phone", type_uuid: "UUID",
+                type_name: "Name", type_address: "Address", type_url: "URL", type_ip: "IP Address",
+                type_color: "Color", type_country: "Country",
                 range_min: "Min", range_max: "Max",
                 range_min_len: "Min Length", range_max_len: "Max Length",
                 range_start_date: "Start Date", range_end_date: "End Date",
@@ -715,11 +725,15 @@
             integer: "整数", float: "浮点数", string: "字符串",
             date: "日期", datetime: "日期时间", boolean: "布尔值",
             categorical: "分类", email: "邮箱", phone: "手机号", uuid: "UUID",
+            name: "姓名", address: "地址", url: "URL", ip: "IP地址",
+            color: "颜色", country: "国家",
         };
         const TYPE_LABELS_EN = {
             integer: "Integer", float: "Float", string: "String",
             date: "Date", datetime: "Datetime", boolean: "Boolean",
             categorical: "Categorical", email: "Email", phone: "Phone", uuid: "UUID",
+            name: "Name", address: "Address", url: "URL", ip: "IP Address",
+            color: "Color", country: "Country",
         };
 
         function getTypeLabel(dtype) {
@@ -737,6 +751,12 @@
             email:      { hasRange: false, hasChoices: false, hasPattern: false },
             phone:      { hasRange: false, hasChoices: false, hasPattern: true },
             uuid:       { hasRange: false, hasChoices: false, hasPattern: false },
+            name:       { hasRange: false, hasChoices: false, hasPattern: true },
+            address:    { hasRange: false, hasChoices: false, hasPattern: false },
+            url:        { hasRange: false, hasChoices: false, hasPattern: false },
+            ip:         { hasRange: false, hasChoices: false, hasPattern: true },
+            color:      { hasRange: false, hasChoices: false, hasPattern: false },
+            country:    { hasRange: false, hasChoices: false, hasPattern: false },
         };
 
         // ==================== Column logic ====================

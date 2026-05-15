@@ -51,6 +51,8 @@ def get_types():
         "integer": "整数", "float": "浮点数", "string": "字符串",
         "date": "日期", "datetime": "日期时间", "boolean": "布尔值",
         "categorical": "分类", "email": "邮箱", "phone": "手机号", "uuid": "UUID",
+        "name": "姓名", "address": "地址", "url": "URL", "ip": "IP地址",
+        "color": "颜色", "country": "国家",
     }
     dist_labels = {
         "uniform": "均匀分布", "normal": "正态分布",
@@ -91,8 +93,13 @@ def _parse_columns(columns_cfg):
         min_val = col.get("min_value")
         max_val = col.get("max_value")
 
-        # 日期/时间类型保留字符串
-        if dtype in (DataType.DATE, DataType.DATETIME):
+        # 日期/时间类型保留字符串（放在数值转换之前）
+        # 同时排除所有不需要数值转换的类型
+        _no_numeric_types = (DataType.DATE, DataType.DATETIME, DataType.NAME, DataType.ADDRESS,
+                             DataType.URL, DataType.IP, DataType.COLOR, DataType.COUNTRY,
+                             DataType.BOOLEAN, DataType.CATEGORICAL, DataType.EMAIL,
+                             DataType.PHONE, DataType.UUID)
+        if dtype in _no_numeric_types:
             min_val = min_val if min_val and str(min_val).strip() else None
             max_val = max_val if max_val and str(max_val).strip() else None
         else:
@@ -106,7 +113,7 @@ def _parse_columns(columns_cfg):
             else:
                 max_val = None
 
-        if min_val is not None and max_val is not None and dtype not in (DataType.DATE, DataType.DATETIME):
+        if min_val is not None and max_val is not None and dtype not in _no_numeric_types:
             if min_val > max_val:
                 return None, f"第 {i} 列（{name}）: {ERROR_MSG['invalid_min_max']}"
 
